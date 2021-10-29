@@ -412,9 +412,10 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+		// 获取Bean 各个属性标签
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
-
+		// 获取别名
 		List<String> aliases = new ArrayList<>();
 		if (StringUtils.hasLength(nameAttr)) {
 			String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);
@@ -429,7 +430,7 @@ public class BeanDefinitionParserDelegate {
 						"' as bean name and " + aliases + " as aliases");
 			}
 		}
-
+		// 校验名字是否唯一
 		if (containingBean == null) {
 			checkNameUniqueness(beanName, aliases, ele);
 		}

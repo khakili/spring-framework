@@ -19,6 +19,9 @@ package org.springframework.context.support;
 import java.io.IOException;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -124,9 +127,12 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 			closeBeanFactory();
 		}
 		try {
+			// 初始化DefaultListableBeanFactory，并将BeanNameAware、BeanFactoryAware、BeanClassLoaderAware这三个Aware忽略。
 			DefaultListableBeanFactory beanFactory = createBeanFactory();
 			beanFactory.setSerializationId(getId());
+			// 设置Bean是否支持循环依赖，以及是否允许BeanDefinition被覆盖。默认都是true
 			customizeBeanFactory(beanFactory);
+			// 开始加载BeanDefinitions，会根据上下文类型不同，进行不同的加载
 			loadBeanDefinitions(beanFactory);
 			this.beanFactory = beanFactory;
 		}

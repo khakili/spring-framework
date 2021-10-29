@@ -258,6 +258,7 @@ public class ContextLoader {
 	 * @see #CONFIG_LOCATION_PARAM
 	 */
 	public WebApplicationContext initWebApplicationContext(ServletContext servletContext) {
+		// 重复初始化校验
 		if (servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) != null) {
 			throw new IllegalStateException(
 					"Cannot initialize context because there is already a root application context present - " +
@@ -275,24 +276,29 @@ public class ContextLoader {
 			// Store context in local instance variable, to guarantee that
 			// it is available on ServletContext shutdown.
 			if (this.context == null) {
+				// 根据ServletContext 初始化Spring上下文
 				this.context = createWebApplicationContext(servletContext);
 			}
 			if (this.context instanceof ConfigurableWebApplicationContext) {
 				ConfigurableWebApplicationContext cwac = (ConfigurableWebApplicationContext) this.context;
+				// 如果上下文未初始化
 				if (!cwac.isActive()) {
 					// The context has not yet been refreshed -> provide services such as
 					// setting the parent context, setting the application context id, etc
+					// 默认这个parent是null
 					if (cwac.getParent() == null) {
 						// The context instance was injected without an explicit parent ->
 						// determine parent for root web application context, if any.
 						ApplicationContext parent = loadParentContext(servletContext);
 						cwac.setParent(parent);
 					}
+					// 开始刷新上下文，初始化各种Bean
 					configureAndRefreshWebApplicationContext(cwac, servletContext);
 				}
 			}
+			// 初始化完成，将Spring上下文，保存到ServletContext中
 			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.context);
-
+			// 将上下文存储值当前线程上线文中
 			ClassLoader ccl = Thread.currentThread().getContextClassLoader();
 			if (ccl == ContextLoader.class.getClassLoader()) {
 				currentContext = this.context;
@@ -337,11 +343,13 @@ public class ContextLoader {
 	 * @see ConfigurableWebApplicationContext
 	 */
 	protected WebApplicationContext createWebApplicationContext(ServletContext sc) {
+		// 获取上下文class
 		Class<?> contextClass = determineContextClass(sc);
 		if (!ConfigurableWebApplicationContext.class.isAssignableFrom(contextClass)) {
 			throw new ApplicationContextException("Custom context class [" + contextClass.getName() +
 					"] is not of type [" + ConfigurableWebApplicationContext.class.getName() + "]");
 		}
+		// 反射生成上下文
 		return (ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
 	}
 
@@ -353,6 +361,7 @@ public class ContextLoader {
 	 * @see #CONTEXT_CLASS_PARAM
 	 * @see org.springframework.web.context.support.XmlWebApplicationContext
 	 */
+	// 从上下文中获取上下文的Class
 	protected Class<?> determineContextClass(ServletContext servletContext) {
 		String contextClassName = servletContext.getInitParameter(CONTEXT_CLASS_PARAM);
 		if (contextClassName != null) {
@@ -377,6 +386,7 @@ public class ContextLoader {
 	}
 
 	protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac, ServletContext sc) {
+		// 设置上下文Id
 		if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
 			// The application context id is still set to its original default value
 			// -> assign a more useful id based on available information
@@ -390,8 +400,9 @@ public class ContextLoader {
 						ObjectUtils.getDisplayString(sc.getContextPath()));
 			}
 		}
-
+		// 使上下文中持有ServletContext实例
 		wac.setServletContext(sc);
+		// 获取配置文件地址
 		String configLocationParam = sc.getInitParameter(CONFIG_LOCATION_PARAM);
 		if (configLocationParam != null) {
 			wac.setConfigLocation(configLocationParam);
@@ -401,11 +412,13 @@ public class ContextLoader {
 		// is refreshed; do it eagerly here to ensure servlet property sources are in place for
 		// use in any post-processing or initialization that occurs below prior to #refresh
 		ConfigurableEnvironment env = wac.getEnvironment();
+		// 获取环境变量配置
 		if (env instanceof ConfigurableWebEnvironment) {
 			((ConfigurableWebEnvironment) env).initPropertySources(sc, null);
 		}
-
+		// 初始化用户配置的自定义的Class
 		customizeContext(sc, wac);
+		// 开始刷新
 		wac.refresh();
 	}
 
